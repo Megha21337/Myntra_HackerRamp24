@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #f7f3ee; /* light coffee color */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        header, footer {
+            width: 100%;
+            background-color: #FFB6C1; /* light pink color */
+            padding: 10px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        .main-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex: 1;
+            width: 100%;
+        }
+        .size-controls, .controls {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 10;
+        }
+        .size-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin: 20px;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            justify-content: center;
+            margin: 20px;
+        }
+        .controls img {
+            cursor: pointer;
+            width: 100px;
+            height: auto;
+        }
+        .model-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 5; /* Ensure it stays below the header and footer */
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        3D Model Viewer
+    </header>
+
+    <div class="main-container">
+        <div class="size-controls">
+            <label for="waist">Select Waist Size:</label>
+            <select id="waist">
+                <option value="1">Small</option>
+                <option value="1.5">Medium</option>
+                <option value="2">Large</option>
+            </select>
+
+            <label for="bust">Select Bust Size:</label>
+            <select id="bust">
+                <option value="1">Small</option>
+                <option value="1.5">Medium</option>
+                <option value="2">Large</option>
+            </select>
+
+            <label for="height">Select Height:</label>
+            <select id="height">
+                <option value="1">Small</option>
+                <option value="1.5">Medium</option>
+                <option value="2">Large</option>
+            </select>
+
+            <button onclick="updateModel()">Update Model</button>
+        </div>
+
+        <div class="model-container">
+            <canvas id="modelCanvas"></canvas>
+        </div>
+
+        <div class="controls">
+            <label>Choose Top:</label>
+            <img src="assets/top1.jpg" alt="Top 1" onclick="selectTop('assets/top1.jpg')">
+            <img src="assets/top2.jpg" alt="Top 2" onclick="selectTop('assets/top2.jpg')">
+            <img src="assets/top3.jpg" alt="Top 3" onclick="selectTop('assets/top3.jpg')">
+            <img src="assets/top4.jpg" alt="Top 4" onclick="selectTop('assets/top4.jpg')">
+            <img src="assets/top5.jpg" alt="Top 5" onclick="selectTop('assets/top5.jpg')">
+
+            <label>Choose Bottom:</label>
+            <img src="assets/bottom1.jpg" alt="Bottom 1" onclick="selectBottom('assets/bottom1.jpg')">
+            <img src="assets/bottom2.jpg" alt="Bottom 2" onclick="selectBottom('assets/bottom2.jpg')">
+            <img src="assets/bottom3.jpg" alt="Bottom 3" onclick="selectBottom('assets/bottom3.jpg')">
+            <img src="assets/bottom4.jpg" alt="Bottom 4" onclick="selectBottom('assets/bottom4.jpg')">
+            <img src="assets/bottom5.jpg" alt="Bottom 5" onclick="selectBottom('assets/bottom5.jpg')">
+        </div>
+    </div>
+
+    <footer>
+        © 2024 3D Model Viewer
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script>
+        let scene, camera, renderer, model;
+        let selectedTop = null;
+        let selectedBottom = null;
+
+        init();
+
+        function init() {
+            // Create the scene
+            scene = new THREE.Scene();
+
+            // Create a camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 3; // Closer to the model to make it appear larger
+
+            // Create the renderer
+            renderer = new THREE.WebGLRenderer();
+            renderer.setClearColor(0xffffff, 1); // Set background to white
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('modelCanvas').appendChild(renderer.domElement);
+
+            // Add lighting
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(1, 1, 1).normalize();
+            scene.add(light);
+
+            // Load the OBJ model
+            const loader = new THREE.OBJLoader();
+            loader.load('woman-swimsuit-001.obj', function (object) {
+                model = object;
+                model.scale.set(2, 2, 2); // Increase the initial scale
+                scene.add(model);
+            }, undefined, function (error) {
+                console.error('An error happened:', error);
+            });
+
+            // Render the scene
+            function animate() {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        function selectTop(texturePath) {
+            selectedTop = texturePath;
+            console.log('Selected top:', texturePath);
+            // Apply texture to the model
+            applyTextureToModel(model, selectedTop, 'top');
+        }
+
+        function selectBottom(texturePath) {
+            selectedBottom = texturePath;
+            console.log('Selected bottom:', texturePath);
+            // Apply texture to the model
+            applyTextureToModel(model, selectedBottom, 'bottom');
+        }
+
+        function updateModel() {
+            const waist = document.getElementById('waist').value;
+            const bust = document.getElementById('bust').value;
+            const height = document.getElementById('height').value;
+
+            if (model) {
+                // Adjust waist, bust, and height separately
+                model.scale.x = waist;   // Adjust waist (X-axis)
+                model.scale.y = height;  // Adjust height (Y-axis)
+                model.scale.z = bust;    // Adjust bust (Z-axis)
+
+                // Apply selected textures
+                if (selectedTop) {
+                    applyTextureToModel(model, selectedTop, 'top');
+                }
+                if (selectedBottom) {
+                    applyTextureToModel(model, selectedBottom, 'bottom');
+                }
+            }
+        }
+
+        function applyTextureToModel(model, texturePath, part) {
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load(texturePath, function (texture) {
+                model.traverse(function (child) {
+                    if (child.isMesh && child.name.includes(part)) {
+                        child.material.map = texture;
+                        child.material.needsUpdate = true;
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
